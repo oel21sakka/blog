@@ -1,6 +1,10 @@
-from rest_framework import generics
+from email_config import EMAIL_HOST_USER
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from django.core.mail import send_mail
 from .models import Post,Comment
-from .serializers import PostsSerializer, CommentSerializer
+from .serializers import PostsSerializer, CommentSerializer, SharePostSerializer
 
 class PostsView (generics.ListAPIView):
     queryset = Post.published.all()
@@ -13,3 +17,19 @@ class SinglePostView (generics.RetrieveAPIView):
 class CommentView (generics.CreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    
+@api_view(['POST'])
+def sharePostView(request):
+    
+    serializer = SharePostSerializer(data = request.data)
+    
+    if serializer.is_valid():
+        post = Post.published.get(id=serializer.data['post'])
+        #Post url should be the post url from the consumer application not the API one it is the API just to test
+        post_url = f'http://127.0.0.1:8000/blog/{post.id}/'
+        subject = f"{serializer.data['name']} recommends you read {post.title}"
+        message = f"Read {post.title} at {post_url}\n\n{serializer.data['name']}\'s comments: {serializer.data['comments']}"
+        send_mail(subject, message, EMAIL_HOST_USER, [serializer.data['recipient_email']], )
+        return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
