@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post,Comment
+from taggit.serializers import TaggitSerializer,TagListSerializerField
 
 class CommentSerializer(serializers.ModelSerializer):
     
@@ -10,14 +11,14 @@ class CommentSerializer(serializers.ModelSerializer):
             'post': {'write_only': True},
         }
 
-class PostsSerializer(serializers.ModelSerializer):
+class PostsSerializer(TaggitSerializer, serializers.ModelSerializer):
     
-    comments = CommentSerializer(many = True, read_only = True)
     author = serializers.SlugRelatedField(read_only = True, slug_field='username')
+    tags = TagListSerializerField()
     
     class Meta:
         model = Post
-        fields = ['title','slug','body', 'author', 'publish', 'created', 'updated', 'status', 'comments']
+        fields = '__all__'
         
         
 class SharePostSerializer(serializers.Serializer):

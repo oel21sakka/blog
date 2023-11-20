@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from email_config import EMAIL_HOST_USER
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -5,14 +6,34 @@ from rest_framework.decorators import api_view
 from django.core.mail import send_mail
 from .models import Post,Comment
 from .serializers import PostsSerializer, CommentSerializer, SharePostSerializer
+from django.db.models import Count
 
 class PostsView (generics.ListAPIView):
     queryset = Post.published.all()
     serializer_class = PostsSerializer
+
     
-class SinglePostView (generics.RetrieveAPIView):
-    queryset = Post.published.all()
-    serializer_class = PostsSerializer
+@api_view(['GET'])
+def SinglePostView (request,post_id):
+    post = get_object_or_404(Post.published, pk=post_id)
+    serializer = PostsSerializer(post)
+    
+    #get comments for the post
+    comments = Comment.objects.all().filter(post = post_id)
+    comments_serializer = CommentSerializer(comments,many = True)
+    
+    #get similar posts
+    similar_posts = Post.published.filter(tags__in=post.tags.all()).exclude(id=post_id)
+    #sort similar posts
+    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags','-publish')[:3]
+    similar_posts_serializer = PostsSerializer(similar_posts,many = True)
+    
+    response = serializer.data
+    #add comments
+    response['comments'] = comments_serializer.data
+    #add similar posts to response
+    response['similar_posts'] = similar_posts_serializer.data
+    return Response(response)
     
 class CommentView (generics.CreateAPIView):
     queryset = Comment.objects.all()
