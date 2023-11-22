@@ -55,7 +55,7 @@ EMAIL_USE_TLS = True
 Load Initial Data
 To load initial data for testing the API, run:
 ``` bash
-python3 manage.py loaddata mysite_data.json
+python3 manage.py loaddata blog_data.json
 ```
 Note: Ensure you have migrated the database before running this command.
 
