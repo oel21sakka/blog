@@ -1,0 +1,4 @@
+migrations
+Pipfile.lock
+email_config.py
+db_config.py

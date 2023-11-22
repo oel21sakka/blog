@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.core.mail import send_mail
 from .models import Post,Comment
-from .serializers import PostsSerializer, CommentSerializer, SharePostSerializer
+from .serializers import PostsSerializer, CommentSerializer, SharePostSerializer, SearchSerializer
 from django.db.models import Count
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 class PostsView (generics.ListAPIView):
     queryset = Post.published.all()
@@ -51,5 +52,18 @@ def sharePostView(request):
         message = f"Read {post.title} at {post_url}\n\n{serializer.data['name']}\'s comments: {serializer.data['comments']}"
         send_mail(subject, message, EMAIL_HOST_USER, [serializer.data['recipient_email']], )
         return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def searchView(request):
+    serializer = SearchSerializer(data = request.data)
+    if serializer.is_valid():
+        searchVector = SearchVector('title', weight='A', config='simple') + SearchVector('body', weight='B')
+        searchQuery = SearchQuery(serializer.data['query'], config='simple')
+        results = Post.published.annotate(search=searchVector, rank=SearchRank(searchVector, searchQuery))\
+            .filter(search=searchQuery).order_by('-rank')
+        return Response(PostsSerializer(results, many = True).data)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -9,6 +9,7 @@ djangorestframework = "*"
 markdown = "*"
 django-filter = "*"
 django-taggit = "*"
+psycopg = "*"
 
 [dev-packages]
 

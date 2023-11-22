@@ -15,10 +15,14 @@ class PostsSerializer(TaggitSerializer, serializers.ModelSerializer):
     
     author = serializers.SlugRelatedField(read_only = True, slug_field='username')
     tags = TagListSerializerField()
+    post_link = serializers.SerializerMethodField()
     
     class Meta:
         model = Post
         fields = '__all__'
+        
+    def get_post_link(self,obj):
+        return obj.get_absolute_url()
         
         
 class SharePostSerializer(serializers.Serializer):
@@ -28,3 +32,5 @@ class SharePostSerializer(serializers.Serializer):
     post = serializers.PrimaryKeyRelatedField(queryset = Post.objects.all(), required = True)
     
     
+class SearchSerializer(serializers.Serializer):
+    query = serializers.CharField(max_length = 255, default = '')

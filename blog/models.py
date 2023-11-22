@@ -27,11 +27,12 @@ class Post(models.Model):
     updated = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2,choices=Status.choices,default=Status.DRAFT)
     tags = TaggableManager()
+    
 
     class Meta:
         ordering = ['-publish']
         indexes = [
-            models.Index(fields=['-publish'])
+            models.Index(fields=['-publish','title','body'])
         ]
 
     def __str__(self):
